@@ -69,6 +69,7 @@ batadv_orig_hash_find(struct batadv_priv *bat_priv, const void *data)
 {
 	struct batadv_hashtable *hash = bat_priv->orig_hash;
 	struct hlist_head *head;
+	spinlock_t *list_lock; /* spinlock to protect write access */
 	struct batadv_orig_node *orig_node, *orig_node_tmp = NULL;
 	int index;
 
@@ -77,6 +78,9 @@ batadv_orig_hash_find(struct batadv_priv *bat_priv, const void *data)
 
 	index = batadv_choose_orig(data, hash->size);
 	head = &hash->table[index];
+	list_lock = &hash->list_locks[index];
+
+	spin_lock_bh(list_lock);
 
 	rcu_read_lock();
 	hlist_for_each_entry_rcu(orig_node, head, hash_entry) {
@@ -90,6 +94,8 @@ batadv_orig_hash_find(struct batadv_priv *bat_priv, const void *data)
 		break;
 	}
 	rcu_read_unlock();
+
+	spin_unlock_bh(list_lock);
 
 	return orig_node_tmp;
 }
