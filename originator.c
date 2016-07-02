@@ -70,6 +70,8 @@ err:
 
 void batadv_neigh_node_free_ref(struct batadv_neigh_node *neigh_node)
 {
+	if (!neigh_node)
+		printk("batadv_neigh_node_free_ref: no neigh_node!!\n");
 	if (atomic_dec_and_test(&neigh_node->refcount))
 		kfree_rcu(neigh_node, rcu);
 }
@@ -331,6 +333,10 @@ batadv_purge_orig_neighbors(struct batadv_priv *bat_priv,
 			neigh_purged = true;
 
 			hlist_del_rcu(&neigh_node->list);
+			if (!orig_node)
+				printk("orignote == NULL!\n");
+			if (!neigh_node)
+				printk("neigh_node == NULL!\n");
 			batadv_bonding_candidate_del(orig_node, neigh_node);
 			batadv_neigh_node_free_ref(neigh_node);
 		} else {
@@ -387,9 +393,10 @@ static void _batadv_purge_orig(struct batadv_priv *bat_priv)
 		hlist_for_each_entry_safe(orig_node, node_tmp,
 					  head, hash_entry) {
 			if (batadv_purge_orig_node(bat_priv, orig_node)) {
-				if (orig_node->gw_flags)
+				if (orig_node->gw_flags) {
 					batadv_gw_node_delete(bat_priv,
 							      orig_node);
+				}
 				hlist_del_rcu(&orig_node->hash_entry);
 				batadv_tt_global_del_orig(orig_node->bat_priv,
 							  orig_node,
